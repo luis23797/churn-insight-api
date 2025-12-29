@@ -1,15 +1,27 @@
 package com.alura.churnnsight.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.alura.churnnsight.dto.PredictionRequest;
+import com.alura.churnnsight.dto.PredictionResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/predict")
 public class PredictionController {
 
-@GetMapping
-public String prediction(){
-        return  "Deposite microservicio";
+    @PostMapping
+    public ResponseEntity<PredictionResponse> predictChurn(@RequestBody @Valid PredictionRequest request) {
+
+
+        PredictionResponse mockResponse = new PredictionResponse(
+                request.clientes().CustomerId(),
+                0.85,
+                1,
+                "Alto Riesgo",
+                "Inmediata"
+        );
+
+        return ResponseEntity.ok(mockResponse);
     }
 }
