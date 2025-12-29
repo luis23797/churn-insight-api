@@ -27,6 +27,14 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.badRequest().body(errors);
     }
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handleServiceUnavailable(RuntimeException ex) {
+        if (ex.getMessage().equals("Servicio de IA no disponible")) {
+
+            return ResponseEntity.status(503).body("Error: El servicio de predicción (Python) no está respondiendo. Intente más tarde.");
+        }
+        return ResponseEntity.status(500).body("Error interno del servidor");
+    }
 
     private record ValidationErrorData(String campo, String mensaje) {
         public ValidationErrorData(FieldError error) {
