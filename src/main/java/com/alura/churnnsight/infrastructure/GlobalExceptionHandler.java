@@ -1,6 +1,7 @@
 package com.alura.churnnsight.infrastructure;
 
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,9 +13,13 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Este método atrapa específicamente los errores de @Valid en los DTOs
+    // Añadimos el Logger para cumplir con el checklist de HU-04
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<List<ValidationErrorData>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+        // Logueamos que hubo un error de validación sin mostrar el JSON completo (protegiendo datos)
+        logger.warn("Se recibió una petición con datos de validación incorrectos. Cantidad de errores: {}", ex.getBindingResult().getErrorCount());
 
         var errors = ex.getFieldErrors().stream()
                 .map(ValidationErrorData::new)
@@ -22,7 +27,6 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.badRequest().body(errors);
     }
-
 
     private record ValidationErrorData(String campo, String mensaje) {
         public ValidationErrorData(FieldError error) {
