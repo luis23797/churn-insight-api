@@ -13,12 +13,12 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Añadimos el Logger para cumplir con el checklist de HU-04
+
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<List<ValidationErrorData>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
-        // Logueamos que hubo un error de validación sin mostrar el JSON completo (protegiendo datos)
+
         logger.warn("Se recibió una petición con datos de validación incorrectos. Cantidad de errores: {}", ex.getBindingResult().getErrorCount());
 
         var errors = ex.getFieldErrors().stream()
