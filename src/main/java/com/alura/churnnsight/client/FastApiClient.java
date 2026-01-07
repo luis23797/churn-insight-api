@@ -3,6 +3,8 @@ package com.alura.churnnsight.client;
 import com.alura.churnnsight.config.FastApiProperties;
 import com.alura.churnnsight.dto.DataMakePrediction;
 import com.alura.churnnsight.dto.DataPredictionResult;
+import com.alura.churnnsight.dto.integration.DataIntegrationRequest;
+import com.alura.churnnsight.dto.integration.DataIntegrationResponse;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -28,6 +30,16 @@ public class FastApiClient {
                 .bodyValue(features)
                 .retrieve()
                 .bodyToMono(DataPredictionResult.class)
+                .timeout(Duration.ofSeconds(props.getTimeoutSeconds()));
+    }
+
+    public Mono<DataIntegrationResponse> predictIntegration(DataIntegrationRequest request) {
+        return webClient.post()
+                .uri(props.getPredictPath())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(DataIntegrationResponse.class)
                 .timeout(Duration.ofSeconds(props.getTimeoutSeconds()));
     }
 }

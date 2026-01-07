@@ -3,6 +3,8 @@ package com.alura.churnnsight.controller;
 import com.alura.churnnsight.dto.DataMakePrediction;
 import com.alura.churnnsight.dto.DataPredictionResult;
 import com.alura.churnnsight.dto.consult.DataPredictionDetail;
+import com.alura.churnnsight.dto.integration.DataIntegrationRequest;
+import com.alura.churnnsight.dto.integration.DataIntegrationResponse;
 import com.alura.churnnsight.service.PredictionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +13,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/predict")
@@ -46,5 +51,24 @@ public class PredictionController {
                 ? ResponseEntity.ok(page.getContent().get(0))
                 : ResponseEntity.notFound().build();
     }
+
+    @PostMapping("/integration")
+    public Mono<ResponseEntity<DataIntegrationResponse>> inferPredictionIntegration(
+            @RequestBody DataIntegrationRequest request
+    ) {
+        return predictionService.predictIntegration(request)
+                .map(ResponseEntity::ok);
+    }
+
+    @PostMapping("/integration/{customerId}")
+    public Mono<ResponseEntity<DataIntegrationResponse>> inferIntegrationFromDb(
+            @PathVariable String customerId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate refDate) {
+
+        return predictionService.predictIntegrationFromDb(customerId, refDate)
+                .map(ResponseEntity::ok);
+    }
+
+
 
 }

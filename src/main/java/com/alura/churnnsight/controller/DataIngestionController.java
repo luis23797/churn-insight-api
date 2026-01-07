@@ -56,4 +56,18 @@ public class DataIngestionController {
                 .status(HttpStatus.CREATED)
                 .body(Map.of("status","Created"));
     }
+
+    @PostMapping("/customer-transaction")
+    public ResponseEntity<Void> createTx(@RequestBody DataCreateCustomerTransaction dto) {
+        dataIngestionService.createCustomerTransaction(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/customer-session")
+    public ResponseEntity<Void> createSession(@RequestBody DataCreateCustomerSession dto) {
+        dataIngestionService.createCustomerSession(dto);
+        return ResponseEntity.ok().build();
+    }
+
+
 }

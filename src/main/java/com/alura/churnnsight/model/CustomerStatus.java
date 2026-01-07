@@ -25,4 +25,7 @@ public class CustomerStatus {
 
     @Column(name = "is_active_member", nullable = false)
     private Boolean isActiveMember;
+
+    @Column(name="has_cr_card", nullable=false)
+    private Boolean hasCrCard;
 }
