@@ -33,11 +33,21 @@ public class Customer {
     @Column(nullable = false)
     private String geography;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "gender", nullable = false)
     private Gender gender; // 0 = Female, 1 = Male
 
+    @Column(name = "surname")
+    private String surname;
+
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
+
+    @Column(name = "estimated_salary")
+    private Double estimatedSalary;
+
+    @Column(name = "customer_segment")
+    private String customerSegment;
 
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp
@@ -63,17 +73,22 @@ public class Customer {
     public Customer(DataCreateCustomer data){
         this.customerId = data.customerId();
         this.geography = data.geography();
-        this.gender = Gender.fromCode(data.gender());
+        this.gender = Gender.valueOf(data.gender().toUpperCase()); // "MALE"/"FEMALE"
         this.birthDate = data.birthDate();
         this.createdAt = data.createdAt();
-
+        this.surname = data.surname();
+        this.estimatedSalary = data.estimatedSalary();
+        this.customerSegment = data.customerSegment();
     }
 
     public int getAge(){
             return (int) birthDate.until(LocalDate.now(),ChronoUnit.YEARS);
     }
-    public int getTernure(){
-            return (int) createdAt.until(LocalDate.now(),ChronoUnit.MONTHS);
+
+    public int getTenure(LocalDate referenceDate) {
+        if (createdAt == null || referenceDate == null) return 0;
+        if (referenceDate.isBefore(createdAt)) return 0;
+        return (int) ChronoUnit.MONTHS.between(createdAt, referenceDate);
     }
 
     public void addProduct(Product product) {

@@ -16,7 +16,7 @@ public record DataMakePrediction(
         String Geography,
         Integer Gender,
         Integer Age,
-        Integer Ternure,
+        Integer Tenure,
         Float Balance,
         Integer NumOfProducts,
         Integer IsActiveMember
@@ -28,7 +28,7 @@ public record DataMakePrediction(
                         customer.getGeography(),
                         customer.getGender().getCode(),
                         customer.getAge(),
-                        customer.getTernure(),
+                        customer.getTenure(LocalDate.now()),
                         balance,
                         numOfProducts,
                         isActiveMember

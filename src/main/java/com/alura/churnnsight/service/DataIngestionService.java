@@ -2,14 +2,8 @@ package com.alura.churnnsight.service;
 
 import com.alura.churnnsight.dto.creation.*;
 import com.alura.churnnsight.exception.CreationException;
-import com.alura.churnnsight.model.Account;
-import com.alura.churnnsight.model.Customer;
-import com.alura.churnnsight.model.CustomerStatus;
-import com.alura.churnnsight.model.Product;
-import com.alura.churnnsight.repository.AccountRepository;
-import com.alura.churnnsight.repository.CustomerRepository;
-import com.alura.churnnsight.repository.CustomerStatusRepository;
-import com.alura.churnnsight.repository.ProductRepository;
+import com.alura.churnnsight.model.*;
+import com.alura.churnnsight.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +19,12 @@ public class DataIngestionService {
     CustomerStatusRepository customerStatusRepository;
     @Autowired
     ProductRepository productRepository;
+
+    @Autowired
+    private CustomerTransactionRepository customerTransactionRepository;
+
+    @Autowired
+    private CustomerSessionRepository customerSessionRepository;
 
 
     public void createCustomer(DataCreateCustomer dataCreateCustomer){
@@ -44,7 +44,16 @@ public class DataIngestionService {
                 .orElseThrow(()->
                         new CreationException("Cliente no encontrado: " + dataCreateCustomerStatus.customerId())
                 );
-        var customerStatus = new CustomerStatus(null,customer,dataCreateCustomerStatus.creditScore(),dataCreateCustomerStatus.isActiveMember());
+        boolean hasCrCardBool = dataCreateCustomerStatus.hasCrCard() != null
+                && dataCreateCustomerStatus.hasCrCard() == 1;
+
+        var customerStatus = new CustomerStatus(
+                null,
+                customer,
+                dataCreateCustomerStatus.creditScore(),
+                dataCreateCustomerStatus.isActiveMember(),
+                hasCrCardBool
+        );
         customerStatusRepository.save(customerStatus);
     }
     public void createProduct(DataCreateProduct dataCreateProduct){
@@ -67,5 +76,38 @@ public class DataIngestionService {
         customer.addProduct(product);
         customerRepository.save(customer);
     }
+
+    public void createCustomerTransaction(DataCreateCustomerTransaction dto) {
+        Customer customer = customerRepository.findByCustomerIdIgnoreCase(dto.customerId())
+                .orElseThrow(() -> new CreationException("Cliente no encontrado: " + dto.customerId()));
+
+        CustomerTransaction tx = new CustomerTransaction();
+        tx.setTransactionId(dto.transactionId());
+        tx.setCustomer(customer);
+        tx.setTransactionDate(dto.transactionDate());
+        tx.setAmount(dto.amount());
+        tx.setTransactionType(dto.transactionType()); // luego validamos contra TX_TYPES
+
+        customerTransactionRepository.save(tx);
+    }
+
+    public void createCustomerSession(DataCreateCustomerSession dto) {
+        Customer customer = customerRepository.findByCustomerIdIgnoreCase(dto.customerId())
+                .orElseThrow(() -> new CreationException("Cliente no encontrado: " + dto.customerId()));
+
+        CustomerSession s = new CustomerSession();
+        s.setSessionId(dto.sessionId());
+        s.setCustomer(customer);
+        s.setSessionDate(dto.sessionDate());
+        s.setDurationMin(dto.durationMin());
+        s.setUsedTransfer(dto.usedTransfer());
+        s.setUsedPayment(dto.usedPayment());
+        s.setUsedInvest(dto.usedInvest());
+        s.setOpenedPush(dto.openedPush());
+        s.setFailedLogin(dto.failedLogin());
+
+        customerSessionRepository.save(s);
+    }
+
 
 }
