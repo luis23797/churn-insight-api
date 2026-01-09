@@ -46,9 +46,6 @@ public class Customer {
     @Column(name = "estimated_salary")
     private Double estimatedSalary;
 
-    @Column(name = "customer_segment")
-    private String customerSegment;
-
     @Column(name = "created_at", nullable = false)
     @CreationTimestamp
     private LocalDate createdAt;
@@ -73,12 +70,11 @@ public class Customer {
     public Customer(DataCreateCustomer data){
         this.customerId = data.customerId();
         this.geography = data.geography();
-        this.gender = Gender.valueOf(data.gender().toUpperCase()); // "MALE"/"FEMALE"
+        this.gender = Gender.valueOf(data.gender());
         this.birthDate = data.birthDate();
         this.createdAt = data.createdAt();
         this.surname = data.surname();
         this.estimatedSalary = data.estimatedSalary();
-        this.customerSegment = data.customerSegment();
     }
 
     public int getAge(){

@@ -6,6 +6,5 @@ CREATE TABLE customer (
     gender VARCHAR(20) NOT NULL,
     birth_date DATE NOT NULL,
     created_at DATE NOT NULL,
-    estimated_salary DOUBLE NULL,
-    customer_segment VARCHAR(50) NULL
+    estimated_salary DOUBLE NULL
 );

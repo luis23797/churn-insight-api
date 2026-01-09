@@ -15,7 +15,6 @@ public record ClienteIn(
         @JsonProperty("NumOfProducts") Integer numOfProducts,
         @JsonProperty("HasCrCard") Integer hasCrCard,
         @JsonProperty("IsActiveMember") Integer isActiveMember,
-        @JsonProperty("EstimatedSalary") Float estimatedSalary,
-        @JsonProperty("CustomerSegment") String customerSegment
+        @JsonProperty("EstimatedSalary") Float estimatedSalary
 ) {
 }

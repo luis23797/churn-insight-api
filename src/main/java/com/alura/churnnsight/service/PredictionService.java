@@ -97,6 +97,10 @@ public class PredictionService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
+    public Mono<List<DataIntegrationResponse>> predictIntegrationBatch(List<DataIntegrationRequest> requests) {
+        return fastApiClient.predictBatch(requests);
+    }
+
     @Transactional
     protected DataIntegrationResponse predictIntegrationFromDbAndPersist(String customerId, LocalDate refDate) {
 
@@ -147,8 +151,7 @@ public class PredictionService {
                         numProducts,
                         hasCrCard,
                         isActiveMember,
-                        customer.getEstimatedSalary() == null ? null : customer.getEstimatedSalary().floatValue(),
-                        customer.getCustomerSegment()
+                        customer.getEstimatedSalary() == null ? null : customer.getEstimatedSalary().floatValue()
                 ),
                 txs.stream().map(t -> new TransaccionIn(
                         t.getTransactionId(),
@@ -190,7 +193,7 @@ public class PredictionService {
         prediction.setPredictedLabel(response.predictedLabel());
         prediction.setCustomerSegment(response.customerSegment());
         prediction.setInterventionPriority(
-                InterventionPriority.fromString(response.interventionPriority())
+                InterventionPriority.fromDataLabel(response.interventionPriority())
         );
 
         // Guardar (insert o update)

@@ -3,8 +3,8 @@ package com.alura.churnnsight.model.enumeration;
 import java.util.Arrays;
 
 public enum Gender {
-    FEMALE(0),
-    MALE(1);
+    Female(0),
+    Male(1);
 
     private final int code;
 
