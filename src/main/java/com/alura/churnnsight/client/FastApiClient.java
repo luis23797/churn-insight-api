@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.List;
 
 @Component
 public class FastApiClient {
@@ -25,7 +26,7 @@ public class FastApiClient {
     }
     public Mono<DataPredictionResult> predict(DataMakePrediction features) {
         return webClient.post()
-                .uri(props.getPredictPath())
+                .uri(props.getPredictCustomerPath())
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(features)
                 .retrieve()
@@ -35,11 +36,21 @@ public class FastApiClient {
 
     public Mono<DataIntegrationResponse> predictIntegration(DataIntegrationRequest request) {
         return webClient.post()
-                .uri(props.getPredictPath())
+                .uri(props.getPredictCustomerPath())
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(DataIntegrationResponse.class)
+                .timeout(Duration.ofSeconds(props.getTimeoutSeconds()));
+    }
+
+    public Mono<List<DataIntegrationResponse>> predictBatch(List<DataIntegrationRequest> requests) {
+        return webClient.post()
+                .uri(props.getPredictBatchPath())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requests)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<DataIntegrationResponse>>() {})
                 .timeout(Duration.ofSeconds(props.getTimeoutSeconds()));
     }
 }

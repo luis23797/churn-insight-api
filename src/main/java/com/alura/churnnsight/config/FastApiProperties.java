@@ -5,13 +5,15 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
-@ConfigurationProperties(prefix = "fastapi")
 @Getter
 @Setter
+@Configuration
+@ConfigurationProperties(prefix = "fastapi")
+
 public class FastApiProperties {
 
     private String baseUrl;
-    private String predictPath;
+    private String predictCustomerPath;
+    private String predictBatchPath;
     private int timeoutSeconds;
 }

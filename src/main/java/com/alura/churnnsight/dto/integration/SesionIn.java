@@ -1,11 +1,14 @@
 package com.alura.churnnsight.dto.integration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.alura.churnnsight.config.FlexibleLocalDateTimeDeserializer;
 import java.time.LocalDateTime;
 
 public record SesionIn(
         @JsonProperty("SessionId") String sessionId,
         @JsonProperty("CustomerId") String customerId,
+        @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
         @JsonProperty("SessionDate") LocalDateTime sessionDate,
         @JsonProperty("DurationMin") Float durationMin,
         @JsonProperty("UsedTransfer") Integer usedTransfer,

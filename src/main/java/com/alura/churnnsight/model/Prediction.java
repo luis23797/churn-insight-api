@@ -48,7 +48,7 @@ public class Prediction {
     public Prediction(DataPredictionResult response, Customer customer) {
         this.predictedProba = response.PredictedProba();
         this.predictedLabel = response.PredictedLabel();
-        this.interventionPriority = InterventionPriority.fromString(response.InterventionPriority());
+        this.interventionPriority = InterventionPriority.fromDataLabel(response.InterventionPriority());
         this.customerSegment = response.CustomerSegment();
         this.predictionDate = LocalDate.now();
         this.customer = customer;

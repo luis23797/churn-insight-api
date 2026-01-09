@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/predict")
@@ -69,6 +70,12 @@ public class PredictionController {
                 .map(ResponseEntity::ok);
     }
 
-
+    @PostMapping("/integration/batch")
+    public Mono<ResponseEntity<List<DataIntegrationResponse>>> inferPredictionIntegrationBatch(
+            @RequestBody List<DataIntegrationRequest> requestList
+    ) {
+        return predictionService.predictIntegrationBatch(requestList)
+                .map(ResponseEntity::ok);
+    }
 
 }
