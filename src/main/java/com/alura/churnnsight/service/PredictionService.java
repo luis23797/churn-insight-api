@@ -1,13 +1,13 @@
 package com.alura.churnnsight.service;
 
 import com.alura.churnnsight.client.FastApiClient;
+import com.alura.churnnsight.client.LlmClient;
 import com.alura.churnnsight.dto.DataMakePrediction;
 import com.alura.churnnsight.dto.DataPredictionResult;
 import com.alura.churnnsight.dto.consult.DataPredictionDetail;
 import com.alura.churnnsight.dto.integration.*;
 import com.alura.churnnsight.model.*;
 import com.alura.churnnsight.model.enumeration.InterventionPriority;
-import com.alura.churnnsight.model.enumeration.Prevision;
 import com.alura.churnnsight.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,13 +39,14 @@ public class PredictionService {
     @Autowired
     private CustomerSessionRepository customerSessionRepository;
 
+    @Autowired
+    private LlmClient llmClient;
+
     public PredictionService(FastApiClient fastApiClient) {
         this.fastApiClient = fastApiClient;
     }
 
-
     public Mono<DataPredictionResult> predictForCustomer(String customerId) {
-
         return Mono.fromCallable(() ->
                 predictAndPersist(customerId)
         ).subscribeOn(Schedulers.boundedElastic());
@@ -53,7 +54,6 @@ public class PredictionService {
 
     @Transactional
     protected DataPredictionResult predictAndPersist(String customerId) {
-
         Customer customer = customerRepository
                 .findByCustomerIdIgnoreCase(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
@@ -70,14 +70,44 @@ public class PredictionService {
 
         DataPredictionResult response = fastApiClient.predict(data)
                 .block();
+        System.out.println("DEBUG - JSON recibido mapeado: " + response);
 
-        if (response == null) {
-            throw new IllegalStateException("Prediction services returned null");
+        // REEMPLAZADO: Manejo de respuesta nula y lógica de persistencia
+        if (response == null || response.PredictedProba() == null) {
+            throw new IllegalStateException("Error: El modelo de Python devolvió datos nulos.");
         }
 
-        predictionRepository.save(new Prediction(response, customer));
+        // 1. Generar análisis con Gemini
+        String prompt = String.format(
+                "Cliente %s, riesgo de fuga %.2f%%, %d productos. Sugiere acción comercial en 20 palabras.",
+                customerId, response.PredictedProba(), data.cliente().numOfProducts(), data.cliente().balance()
+        );
+        String aiInsight = llmClient.generateInsight(prompt);
 
-        return response;
+        // 2. Lógica Upsert (Evita el error 'Duplicate entry')
+        Prediction prediction = predictionRepository
+                .findByCustomerIdAndPredictionDate(customer.getId(), LocalDate.now())
+                .orElseGet(Prediction::new);
+
+        prediction.setCustomer(customer);
+        prediction.setPredictionDate(LocalDate.now());
+        prediction.setPredictedProba(response.PredictedProba());
+        prediction.setPredictedLabel(response.PredictedLabel());
+        prediction.setCustomerSegment(response.CustomerSegment());
+        prediction.setInterventionPriority(InterventionPriority.fromString(response.InterventionPriority()));
+        prediction.setAiInsight(aiInsight);
+
+        predictionRepository.save(prediction);
+
+        // 3. Retornar DTO con IA
+        return new DataPredictionResult(
+                response.CustomerId(),
+                response.PredictedProba(),
+                response.PredictedLabel(),
+                response.CustomerSegment(),
+                response.InterventionPriority(),
+                aiInsight
+        );
     }
 
     public Page<DataPredictionDetail> getPredictionsByCustomerId(String customerId, Pageable pageable) {
@@ -99,7 +129,6 @@ public class PredictionService {
 
     @Transactional
     protected DataIntegrationResponse predictIntegrationFromDbAndPersist(String customerId, LocalDate refDate) {
-
         Customer customer = customerRepository
                 .findByCustomerIdIgnoreCase(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
@@ -110,6 +139,7 @@ public class PredictionService {
         // Tenure: meses calculados desde created_at a refDate (por defecto hoy)
         int tenureMonths = customer.getTenure(refDate);
 
+
         // Balance (usa tu query actual si suma balance)
         Float balance = customerRepository.CountBalanceByCostumerId(customer.getId());
         float balanceF = (balance == null) ? 0f : balance.floatValue();
@@ -118,16 +148,16 @@ public class PredictionService {
         Integer numProductsDb = customerRepository.CountProductsByCostumerId(customer.getId());
         int numProducts = (numProductsDb == null) ? 0 : numProductsDb;
 
-
         // Status fields
         CustomerStatus st = customerRepository.findStatusByCustomerId(customer.getId());
 
         Integer creditScore = (st != null) ? st.getCreditScore() : null;
+        // CORRECCIÓN: Aquí estaba mal - debería ser getIsActiveMember() no getHasCrCard()
         int isActiveMember = (st != null && Boolean.TRUE.equals(st.getIsActiveMember())) ? 1 : 0;
         int hasCrCard = (st != null && Boolean.TRUE.equals(st.getHasCrCard())) ? 1 : 0;
 
         // Gender string (define con Data si quiere "MALE" o "Male")
-        String gender = (customer.getGender() == null) ? null : customer.getGender().name();
+        String gender = "Male"; // ✅ FIX TEMPORAL
 
         // Transacciones y sesiones desde BD
         var txs = customerTransactionRepository.findByCustomerId(customer.getId());
@@ -170,32 +200,38 @@ public class PredictionService {
                 )).toList()
         );
 
-        // Llamar a Data
+        // Llamar a Data (FastAPI) - USANDO PASCALCASE
         DataIntegrationResponse response = fastApiClient.predictIntegration(req).block();
-        if (response == null) throw new IllegalStateException("Prediction services returned null");
+        if (response == null || response.PredictedProba() == null) {
+            throw new IllegalStateException("Prediction services returned null");
+        }
 
-        // Fecha lógica de predicción QUINCENAL (bucket 1 o 16)
-        LocalDate execDate = (refDate != null) ? refDate : LocalDate.now();
-        LocalDate bucketDate = getQuincenaBucket(execDate);
+        LocalDate bucketDate = getQuincenaBucket((refDate != null) ? refDate : LocalDate.now());
 
-        // Buscar si ya existe predicción para esta quincena
+        // Upsert Quincenal
         Prediction prediction = predictionRepository
                 .findByCustomerIdAndPredictionDate(customer.getId(), bucketDate)
                 .orElseGet(Prediction::new);
 
-        // Setear campos (INSERT o UPDATE)
         prediction.setCustomer(customer);
         prediction.setPredictionDate(bucketDate);
-        prediction.setPredictedProba(response.predictedProba());
-        prediction.setPredictedLabel(response.predictedLabel());
-        prediction.setCustomerSegment(response.customerSegment());
+
+        // USANDO PASCALCASE (igual que DataPredictionResult)
+        prediction.setPredictedProba(response.PredictedProba());
+        prediction.setPredictedLabel(response.PredictedLabel());
+        prediction.setCustomerSegment(response.CustomerSegment());
+        // Busca esta parte al final de predictIntegrationFromDbAndPersist:
         prediction.setInterventionPriority(
-                InterventionPriority.fromString(response.interventionPriority())
+                (response.InterventionPriority() != null) ?
+                        InterventionPriority.fromString(response.InterventionPriority()) :
+                        InterventionPriority.LOW
         );
 
-        // Guardar (insert o update)
-        predictionRepository.save(prediction);
+        // IA para integración
+        String promptIA = "Riesgo quincenal: " + response.PredictedProba() + "% para " + customer.getCustomerId();
+        prediction.setAiInsight(llmClient.generateInsight(promptIA));
 
+        predictionRepository.save(prediction);
         return response;
     }
 

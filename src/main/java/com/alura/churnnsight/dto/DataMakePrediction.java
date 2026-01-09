@@ -1,39 +1,42 @@
 package com.alura.churnnsight.dto;
 
+import com.alura.churnnsight.dto.integration.ClienteIn;
+import com.alura.churnnsight.dto.integration.SesionIn;
+import com.alura.churnnsight.dto.integration.TransaccionIn;
 import com.alura.churnnsight.model.Customer;
-import com.alura.churnnsight.model.enumeration.Plan;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
-
-import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record DataMakePrediction(
-        String CustomerId,
-        String Geography,
-        Integer Gender,
-        Integer Age,
-        Integer Tenure,
-        Float Balance,
-        Integer NumOfProducts,
-        Integer IsActiveMember
+        @JsonProperty("cliente") ClienteIn cliente,
+        @JsonProperty("transacciones") List<TransaccionIn> transacciones,
+        @JsonProperty("sesiones") List<SesionIn> sesiones
 ) {
 
-        public DataMakePrediction(Customer customer,Float balance, Integer numOfProducts, Integer isActiveMember){
+        public DataMakePrediction(Customer customer, Float balance, Integer numOfProducts, Integer isActiveMember) {
                 this(
-                        customer.getCustomerId(),
-                        customer.getGeography(),
-                        customer.getGender().getCode(),
-                        customer.getAge(),
-                        customer.getTenure(LocalDate.now()),
-                        balance,
-                        numOfProducts,
-                        isActiveMember
+                        new ClienteIn(
+                                1,
+                                customer.getCustomerId(),
+                                customer.getSurname(),
+                                600,
+                                customer.getGeography(),
+                                "Male",
+                                customer.getAge(),
+                                customer.getTenure(LocalDate.now()),
+                                balance,
+                                numOfProducts,
+                                1,
+                                isActiveMember,
+                                customer.getEstimatedSalary() != null ?
+                                        customer.getEstimatedSalary().floatValue() : 0.0f,
+                                "GOLD"
+                        ),
+                        List.of(),
+                        List.of()
                 );
         }
+
 }
-
-

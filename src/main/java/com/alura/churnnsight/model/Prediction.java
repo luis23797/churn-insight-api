@@ -45,13 +45,17 @@ public class Prediction {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
+    @Column(name = "ai_insight", columnDefinition = "TEXT")
+    private String aiInsight;
+
     public Prediction(DataPredictionResult response, Customer customer) {
-        this.predictedProba = response.PredictedProba();
-        this.predictedLabel = response.PredictedLabel();
-        this.interventionPriority = InterventionPriority.fromString(response.InterventionPriority());
+        this.predictedProba = (response.PredictedProba() != null) ? response.PredictedProba() : 0.0;
+        this.predictedLabel = (response.PredictedLabel() != null) ? response.PredictedLabel() : 0;
         this.customerSegment = response.CustomerSegment();
         this.predictionDate = LocalDate.now();
         this.customer = customer;
-
+        this.interventionPriority = (response.InterventionPriority() != null) ?
+                InterventionPriority.fromString(response.InterventionPriority()) :
+                InterventionPriority.LOW;
     }
 }

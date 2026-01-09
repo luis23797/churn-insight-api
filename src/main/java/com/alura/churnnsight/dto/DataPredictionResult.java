@@ -1,13 +1,19 @@
 package com.alura.churnnsight.dto;
 
-import com.alura.churnnsight.model.enumeration.Prevision;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record DataPredictionResult(
-       String CustomerId,
-       Float PredictedProba,
-       Integer PredictedLabel,
-       String CustomerSegment,
-       String InterventionPriority
+        @JsonProperty("CustomerId") String CustomerId,
+        @JsonProperty("PredictedProba") Double PredictedProba, //
+        @JsonProperty("PredictedLabel") Integer PredictedLabel, //
+        @JsonProperty("CustomerSegment") String CustomerSegment,
+        @JsonProperty("InterventionPriority") String InterventionPriority,
+        @JsonProperty("AiInsight") String AiInsight
 ) {
-
+        public DataPredictionResult(String CustomerId, Double PredictedProba, Integer PredictedLabel,
+                                    String CustomerSegment, String InterventionPriority) {
+                this(CustomerId, PredictedProba, PredictedLabel, CustomerSegment, InterventionPriority, null);
+        }
 }
