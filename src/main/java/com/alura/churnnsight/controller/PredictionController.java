@@ -91,7 +91,13 @@ public class PredictionController {
                 .flatMap(ignored -> latestMono);
     }
 
-
+    @PostMapping("/integration/batch")
+    public Mono<ResponseEntity<List<DataIntegrationResponse>>> inferPredictionIntegrationBatch(
+            @RequestBody List<DataIntegrationRequest> requestList
+    ) {
+        return predictionService.predictIntegrationBatch(requestList)
+                .map(ResponseEntity::ok);
+    }
 
     @PostMapping("/integration/batch")
     public Mono<ResponseEntity<List<DataIntegrationResponse>>> inferPredictionIntegrationBatch(
