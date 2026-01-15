@@ -8,6 +8,9 @@ import com.alura.churnnsight.dto.DataPredictionResult;
 import com.alura.churnnsight.dto.consult.DataPredictionDetail;
 import com.alura.churnnsight.dto.integration.*;
 
+import com.alura.churnnsight.exception.BusinessException;
+import com.alura.churnnsight.exception.DownstreamException;
+import com.alura.churnnsight.exception.NotFoundException;
 import com.alura.churnnsight.model.*;
 import com.alura.churnnsight.model.enumeration.InterventionPriority;
 import com.alura.churnnsight.repository.*;
@@ -100,7 +103,7 @@ public class PredictionService {
 
         Customer customer = customerRepository
                 .findByCustomerIdIgnoreCase(customerId)
-                .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
+                .orElseThrow(() -> new NotFoundException("Customer not found: " + customerId));
 
         Long id = customer.getId();
 
@@ -115,7 +118,7 @@ public class PredictionService {
 
         DataPredictionResult response = fastApiClient.predict(data).block();
         if (response == null) {
-            throw new IllegalStateException("Prediction services returned null");
+            throw new DownstreamException("FASTAPI", 502, "Null response from /predict");
         }
 
         Prediction prediction = new Prediction(response, customer);
@@ -146,7 +149,7 @@ public class PredictionService {
     public Page<DataPredictionDetail> getPredictionsByCustomerId(String customerId, Pageable pageable) {
         Customer customer = customerRepository
                 .findByCustomerIdIgnoreCase(customerId)
-                .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
+                .orElseThrow(() -> new NotFoundException("Customer not found: " + customerId));
 
         return predictionRepository.findByCustomerId(customer.getId(), pageable)
                 .map(DataPredictionDetail::new);
@@ -164,7 +167,7 @@ public class PredictionService {
         return fastApiClient.predictBatch(requests);
     }
 
-    // HELPERS
+    // HELPERS IA
 
     private String buildRetentionPlanPrompt(Object contextoCliente, Object prediccionModelo) {
         String contextoJson = toPrettyJson(contextoCliente);
@@ -279,7 +282,7 @@ public class PredictionService {
         return date.withDayOfMonth(1);
     }
 
-    // Integration BATCH + UPSERT + PERSIST
+    // Integration BATCH + UPSERT + PERSIST + HELPERS
     public Mono<List<DataIntegrationResponse>> predictIntegrationBatchUpsertAndPersist(List<DataIntegrationRequest> batch) {
         return Mono.fromCallable(() -> persistBatchUpsertAndPredictions(batch))
                 .subscribeOn(Schedulers.boundedElastic());
@@ -292,7 +295,7 @@ public class PredictionService {
 
         // 1) Llamar a Data (FastAPI)
         List<DataIntegrationResponse> responses = fastApiClient.predictBatch(batch).block();
-        if (responses == null) throw new IllegalStateException("Prediction services returned null (batch)");
+        if (responses == null)    throw new DownstreamException("FASTAPI", 502, "Null response from /predict/batch");
 
         // 2) Mapa request por customerId (robusto si se desordena)
         Map<String, DataIntegrationRequest> reqByCustomerId = batch.stream()
@@ -483,7 +486,7 @@ public class PredictionService {
 
             Customer customer = customerRepository
                     .findByCustomerIdIgnoreCase(customerId)
-                    .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
+                    .orElseThrow(() -> new NotFoundException("Customer not found: " + customerId));
 
             // 1) si ya existe para bucket => devolver desde DB (PERO completa LLM si falta)
             var existingOpt = predictionRepository.findByCustomerIdAndPredictionDateFetchCustomer(customer.getId(), bucketDate);
@@ -531,7 +534,7 @@ public class PredictionService {
             DataIntegrationRequest req = buildIntegrationRequestFromDb(customer, effectiveRefDate);
 
             DataIntegrationResponse res = fastApiClient.predictIntegration(req).block();
-            if (res == null) throw new IllegalStateException("Prediction services returned null");
+            if (res == null) throw new DownstreamException("FASTAPI", 502, "Null response from /predict/integration");
 
             Prediction p = new Prediction();
             p.setCustomer(customer);
@@ -639,7 +642,11 @@ public class PredictionService {
         return Mono.fromCallable(() -> {
 
             // 1) Traer todos los customers registrados
-            List<Customer> customers = customerRepository.findAll(); // (si son muchos, luego lo hacemos paginado)
+            List<Customer> customers = customerRepository.findAll();
+
+            if (customers.isEmpty()) {
+                throw new BusinessException("NO_CUSTOMERS", "No hay clientes registrados para procesar.");
+            }
 
             // 2) Armar batch request desde BD
             List<DataIntegrationRequest> batch = customers.stream()

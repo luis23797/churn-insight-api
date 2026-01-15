@@ -2,6 +2,7 @@ package com.alura.churnnsight.controller;
 
 import com.alura.churnnsight.dto.creation.*;
 import com.alura.churnnsight.service.DataIngestionService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
