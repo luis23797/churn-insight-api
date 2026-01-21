@@ -12,14 +12,12 @@ import com.alura.churnnsight.exception.BusinessException;
 import com.alura.churnnsight.exception.DownstreamException;
 import com.alura.churnnsight.exception.NotFoundException;
 import com.alura.churnnsight.model.*;
-import com.alura.churnnsight.model.enumeration.InterventionPriority;
 import com.alura.churnnsight.repository.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

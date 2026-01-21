@@ -8,6 +8,7 @@ import com.alura.churnnsight.dto.integration.DataIntegrationRequest;
 import com.alura.churnnsight.dto.integration.DataIntegrationResponse;
 import com.alura.churnnsight.service.PredictionService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,7 +35,8 @@ public class PredictionController {
     private PredictionService predictionService;
 
     @PostMapping("/{customerId}")
-    public Mono<ResponseEntity<DataPredictionResult>> inferPrediction(@PathVariable String customerId) {
+    public Mono<ResponseEntity<DataPredictionResult>> inferPrediction(
+            @PathVariable @NotBlank(message="El customerId no puede estar vacío") String customerId) {
         return predictionService.predictForCustomer(customerId)
                 .map(ResponseEntity::ok);
     }

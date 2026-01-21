@@ -1,15 +1,6 @@
 package com.alura.churnnsight.dto;
 
 import com.alura.churnnsight.model.Customer;
-import com.alura.churnnsight.model.enumeration.Plan;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
-
-import jakarta.validation.constraints.*;
-
-import java.time.LocalDate;
 
 public record DataMakePrediction(
         String CustomerId,
