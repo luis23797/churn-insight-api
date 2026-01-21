@@ -353,7 +353,7 @@ public class PredictionService {
             prediction.setPredictedProba(res.predictedProba());
             prediction.setPredictedLabel(res.predictedLabel());
             prediction.setCustomerSegment(res.customerSegment());
-            prediction.setInterventionPriority(InterventionPriority.fromDataLabel(res.interventionPriority()));
+            prediction.setInterventionPriority(res.interventionPriority());
 
             // 3.5 LLM en batch
             if (shouldGenerateInsight(prediction)) {
@@ -479,6 +479,7 @@ public class PredictionService {
     }
 
     public Mono<DataIntegrationResponse> predictIntegrationFromDbPro(String customerId, LocalDate refDate) {
+        System.out.println("Enviando Body: ");
         LocalDate effectiveRefDate = (refDate != null) ? refDate : LocalDate.now();
         LocalDate bucketDate = getMonthBucket(effectiveRefDate);
 
@@ -542,7 +543,7 @@ public class PredictionService {
             p.setPredictedProba(res.predictedProba());
             p.setPredictedLabel(res.predictedLabel());
             p.setCustomerSegment(res.customerSegment());
-            p.setInterventionPriority(InterventionPriority.fromDataLabel(res.interventionPriority()));
+            p.setInterventionPriority(res.interventionPriority());
 
             // LLM siempre se intenta aquí (si falla, se guarda error/missing)
             String prompt = buildRetentionPlanPrompt(req, res);
